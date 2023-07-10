@@ -1,11 +1,5 @@
 # ninja log v5
 6	344	7086389857865879	CMakeFiles/ball_tree_clion.dir/Ball_Tree.cpp.obj	bcc8965c7638612
-115	38791	7107319309308589	CMakeFiles/ball_tree_clion.dir/main.cpp.obj	43325da725d6cd6a
-38793	113670	7107320058459422	ball_tree_clion.exe	6f0d21f39e022695
-0	1532	7107326060602515	build.ninja	fba84fd267616eba
-3	26704	7107326327837072	CMakeFiles/ball_tree_clion.dir/main.cpp.obj	21c729d4df6b9c2b
-26732	28292	7107326343949954	ball_tree_clion.exe	d90eb9939f17fb29
-7	25662	7107327746754608	CMakeFiles/ball_tree_clion.dir/main.cpp.obj	21c729d4df6b9c2b
-25677	27073	7107327761345919	ball_tree_clion.exe	d90eb9939f17fb29
-4	20886	7107330008042046	CMakeFiles/ball_tree_clion.dir/main.cpp.obj	21c729d4df6b9c2b
-20887	22437	7107330024031938	ball_tree_clion.exe	d90eb9939f17fb29
+4	25037	7107339543396539	CMakeFiles/ball_tree_clion.dir/main.cpp.obj	21c729d4df6b9c2b
+25046	26589	7107339560011067	ball_tree_clion.exe	d90eb9939f17fb29
+0	1532	7107341599816290	build.ninja	fba84fd267616eba

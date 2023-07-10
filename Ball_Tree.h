@@ -50,12 +50,14 @@ vector<Point<ndim>> Ball_Tree<ndim>::KNN(Point<ndim> &target, int k) {
     return v;
 }
 
-
-
 template<int ndim>
 void Ball_Tree<ndim>::bulkData(vector<Point<ndim>> data) {
     root->build(data);
 }
+
+
+
+/*Extra*/
 
 template<int ndim>
 void Ball_Tree<ndim>::printToFile() {

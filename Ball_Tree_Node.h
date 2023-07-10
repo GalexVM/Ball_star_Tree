@@ -38,20 +38,19 @@ public:
     bool canDivide();
     void build(vector<Point<ndim>>& data_t);
     void coverData();
-    void coverData2();
-    void coverData3();
-    void saveData(vector<Point<ndim>>& data_t);
-    void writeCircleToFile(const std::string& file);
-    void writeDataToFile(const std::string& file);
+    void coverData2(); //Actual
     void splitData();
-    void writeExtremePoints(vector<Point<ndim>> maxp, vector<Point<ndim>> minp, Point<ndim> cen );
+    void saveData(vector<Point<ndim>>& data_t);
     vector<std::pair<Point<ndim>,double>> KNN(Point<ndim>& target, vector<std::pair<Point<ndim>,double>>  psIn,
-                                           Ball_Tree_Node<ndim> *node, int k);
-
+                                              Ball_Tree_Node<ndim> *node, int k);
     vector<Point<ndim>> KNN_lineal(Point<ndim>& target,int k);
 
-    Point<ndim>* findTarget(std::string n);
-    Ball_Tree_Node<ndim>* findClosestNode(Point<ndim>& target);
+    /*Impresiones*/
+    void writeCircleToFile(const std::string& file);
+    void writeDataToFile(const std::string& file);
+    void writeExtremePoints(vector<Point<ndim>> maxp, vector<Point<ndim>> minp, Point<ndim> cen );
+
+
 private:
     struct DistanceComparator {
         bool operator()(const pair<Point<ndim>, double>& p1, const pair<Point<ndim>, double>& p2) {
@@ -63,17 +62,12 @@ private:
     int maxPoints = 1000;
     int currentPoints = 0;
     Eigen::Matrix<double,Eigen::Dynamic, Eigen::Dynamic> stdToEigen(vector<Point<ndim>>& v);
-    vector<Point<ndim>> eigenToStd(Eigen::Matrix<double,Eigen::Dynamic, Eigen::Dynamic> mat);
-    Eigen::Matrix<double,Eigen::Dynamic, Eigen::Dynamic> sort_data(
-                                                        Eigen::Matrix<double, 1, Eigen::Dynamic> data_1d,
-                                                        Eigen::Matrix<double,Eigen::Dynamic, Eigen::Dynamic> data);
     void sort_vectors(vector<Point<ndim>>& v1, vector<Point<ndim>>& v2);
-    void sort_vectors2(Eigen::Matrix<double,Eigen::Dynamic,1>& v1, vector<Point<ndim>>& v2);
+    void sort_vectors2(Eigen::Matrix<double,Eigen::Dynamic,1>& v1, vector<Point<ndim>>& v2); //Actual
     double calculateDistMaxCurrent( int k, Point<ndim>& target, vector<std::pair<Point<ndim>,double>>& psIn, double posibility);
     double calculateDistMaxCurrent( int k, Point<ndim>& target, vector<std::pair<Point<ndim>,double>>& psIn);
     double calculateDistMinNode(Point<ndim>& target, Ball_Tree_Node<ndim>* node);
     vector<Ball_Tree_Node<ndim>*> getAllLeaves();
-
 };
 
 template<int ndim>
@@ -97,6 +91,11 @@ vector<Ball_Tree_Node<ndim> *> Ball_Tree_Node<ndim>::getAllLeaves() {
 
 template<int ndim>
 vector<Point<ndim>> Ball_Tree_Node<ndim>::KNN_lineal(Point<ndim> &target, int k) {
+    /*
+     * Idea: ubicar todos los nodos hojas
+     * Buscar en los datos de todos los nodos de forma lineal
+     * Sorprendentemente rápido
+     * */
     vector<Point<ndim>> knn;
     std::priority_queue<pair<Point<ndim>, double>, vector<pair<Point<ndim>, double>>, DistanceComparator> pq;
     vector<Ball_Tree_Node<ndim>*> leaves = getAllLeaves();
@@ -119,39 +118,6 @@ vector<Point<ndim>> Ball_Tree_Node<ndim>::KNN_lineal(Point<ndim> &target, int k)
     }
     reverse(knn.begin(), knn.end());
     return knn;
-}
-
-template<int ndim>
-Point<ndim>* Ball_Tree_Node<ndim>::findTarget(std::string n) {
-    if(this->isLeaf)
-    {
-        for(auto d : data)
-            if(d.name == n)
-                return new Point(d);
-        return new Point<ndim>(false);
-    }
-    else{
-        auto r1 = leftChild->findTarget(n);
-        if(!r1->empty) return  r1;
-        auto r2 = rightChild->findTarget(n);
-        if(!r2->empty) return r2;
-        return new Point<ndim>(false);
-    }
-}
-
-
-template<int ndim>
-Ball_Tree_Node<ndim> *Ball_Tree_Node<ndim>::findClosestNode(Point<ndim>& target) {
-    if(isLeaf)
-    {
-        return this;
-    }
-    else{
-        if(leftChild->center->dist(&target) - leftChild->radius < rightChild->center->dist(&target) - leftChild->radius)
-            return leftChild->findClosestNode(target);
-        else
-            return rightChild->findClosestNode(target);
-    }
 }
 
 template<int ndim>
@@ -189,6 +155,12 @@ double Ball_Tree_Node<ndim>::calculateDistMaxCurrent(int k, Point<ndim> &target,
 template<int ndim>
 vector<std::pair<Point<ndim>,double>> Ball_Tree_Node<ndim>::KNN(Point<ndim>& target, vector<std::pair<Point<ndim>,double>> psIn,
                                                                 Ball_Tree_Node<ndim> *node, int k) {
+    /*
+     * Idea:
+     * Basado en el algoritmo de Liu et al. "New algorithms for efficient high-dimensional nonparametric classification"
+     * Buscar KNN en el nodo actual
+     * Si el KNN actual más lejano está más lejos que el nodo más cercano, ampliar los KNN con los datos de dicho nodo.
+     * */
     vector<std::pair<Point<ndim>,double>> psOut;
 
     double distMaxCurrent = calculateDistMaxCurrent(k, target, psIn);
@@ -240,36 +212,14 @@ vector<std::pair<Point<ndim>,double>> Ball_Tree_Node<ndim>::KNN(Point<ndim>& tar
 }
 
 template<int ndim>
-void Ball_Tree_Node<ndim>::coverData3() {
-    if(data.empty()) return;
-    Point<ndim>* media = new Point<ndim>;
-    vector<Point<ndim>> extremos;
-    for(int i = 0; i < ndim; i++){
-        extremos.emplace_back( *(std::max_element(data.begin(),data.end(),[&i](Point<ndim>&a,Point<ndim>&b){
-            return a.coord[i] < b.coord[i];
-        })));
-    }
-    for(int i = ndim; i < 2*ndim; i++){
-        extremos.emplace_back( *(std::min_element(data.begin(),data.end(),[&i](Point<ndim>&a,Point<ndim>&b){
-            return a.coord[i] < b.coord[i];
-        })));
-    }
-    for(int i = 0; i < ndim; i++)
-        media->coord[i] = (extremos[i].coord[i] + extremos[i+ndim].coord[i]) / 2;
-
-    auto tempRad = *(std::max_element(extremos.begin(),extremos.end(),[&media]
-    (Point<ndim>&a, Point<ndim>&b){
-        return media->dist((a)) < media->dist((b));
-    }));
-
-    radius = media->dist(tempRad);
-    radius *= sqrt(2);
-    center = std::move(media);
-    //delete media;
-
-}
-template<int ndim>
 void Ball_Tree_Node<ndim>::coverData2() {
+    /*
+     * Idea:
+     * Obtener los puntos min y max de cada dimensión.
+     * Entre estos puntos, decidir el más lejano del centroide
+     * Formar el radio en base a esta diferencia
+     * Multiplicar el radio por raíz de 2 para evitar puntos fuera del círculo
+     * */
     if (data.empty()) return;
     Point<ndim>* media = new Point<ndim>; //Buscar punto medio del círculo
     vector<Point<ndim>> min_points(ndim); //Apuntar al punto min,max en cada dimensión
@@ -311,16 +261,7 @@ void Ball_Tree_Node<ndim>::build(vector<Point<ndim>> & data_t) {
         return;
     }
 }
-template<int ndim>
-vector<Point<ndim>> Ball_Tree_Node<ndim>::eigenToStd(Eigen::Matrix<double,Eigen::Dynamic, Eigen::Dynamic> mat) {
-    vector<Point<ndim>> result((int)mat.rows());
-    for (int i = 0; i < result.size(); ++i) {
-        result[i] = Point<ndim>();
-        for (int j = 0; j < (int)mat.cols(); ++j)
-           result[i].coord[j] = mat(i,j);
-    }
-    return result;
-}
+
 template<int ndim>
 Eigen::Matrix<double,Eigen::Dynamic, Eigen::Dynamic> Ball_Tree_Node<ndim>::stdToEigen(vector<Point<ndim>>& v) {
     int rows = v.size();
@@ -338,6 +279,14 @@ void Ball_Tree_Node<ndim>::saveData(vector<Point<ndim>> &data_t) {
 }
 template<int ndim>
 void Ball_Tree_Node<ndim>::splitData() {
+    /*
+     * Idea:
+     * Convertir el vector de datos a una matriz de eigen
+     * Reducir la matriz a 1 dimensión usando PCA
+     * Ordenar conjuntamente la matriz de 1 dimensión y los datos originales (sort_vectors2)
+     * Al ordenar la matriz de una dimensión y dividir a la mitad, se está dividiendo perpendicularmente a la orientación de los puntos.
+     * Dividir en 2 hijos.
+     * */
     pca<double> pca1;
 
     Eigen::Matrix<double,Eigen::Dynamic, Eigen::Dynamic> input = stdToEigen(data);
@@ -441,23 +390,7 @@ void Ball_Tree_Node<ndim>::sort_vectors(vector<Point<ndim>> &v1, vector<Point<nd
     v1 = sorted_v1;
     v2 = sorted_v2;
 }
-template<int ndim>
-Eigen::Matrix<double,Eigen::Dynamic, Eigen::Dynamic>
-Ball_Tree_Node<ndim>::sort_data(Eigen::Matrix<double, 1, Eigen::Dynamic> data_1d,
-                                Eigen::Matrix<double,Eigen::Dynamic, Eigen::Dynamic> data_p) {
-    vector<std::pair<int, int>> data_pair;
-    for (int i = 0; i < data_1d.size(); ++i)
-        data_pair.emplace_back(data_1d[i], i);
-    std::sort(std::begin(data_pair), std::end(data_pair), std::greater<std::pair<int, int>>());
-    auto sorted_1d = Eigen::Matrix<double, 1, Eigen::Dynamic>(data_1d.cols());
-    auto sorted_data = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>(data_p.rows(), data_p.cols());
-    for (int i = 0; i < data_1d.size(); ++i)
-    {
-        sorted_1d[i] = data_pair[i].first; //can also be data_pair[i].first
-        sorted_data.col(i) = data_p.col(data_pair[i].second);
-    }
-    return sorted_data;
-}
+
 template<int ndim>
 void Ball_Tree_Node<ndim>::writeExtremePoints(vector<Point<ndim>> maxp, vector<Point<ndim>> minp, Point<ndim> cen ) {
     std::ofstream outputfile("../textfiles/e_points.txt");

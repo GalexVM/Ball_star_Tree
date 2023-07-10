@@ -1,5 +1,4 @@
 #include "Ball_Tree.h"
-#include "NaiveKNN.h"
 #include <string>
 #include <chrono>
 
@@ -32,7 +31,7 @@ int main() {
     cout << "Ingrese el numero de veinos que quiere buscar de la cancion \'" << canción << "\': \n";
     int K;
     std::cin >> K;
-    cout << "Calculando los " << K << " vecinos más cercanos de " << canción << "...\n";
+    cout << "Calculando los " << K << " vecinos mas cercanos de " << canción << "...\n";
 
     /*Buscar canción dentro de los datos*/
     Point <dim> t = Point<dim>(false);
