@@ -21,15 +21,15 @@ int main() {
     bt.bulkData(d);
     auto end = std::chrono::steady_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    auto time2 = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     cout << "Tiempo de construccion: " << time << "ns\n";
-    time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    cout << "Tiempo de construccion: " << time << "ms\n";
+    cout << "Tiempo de construccion: " << time2 << "ms\n";
 
     /*Input de KNN*/
-    cout << "Ingrese el nombre de la canción a buscar(sin comas):\n";
+    cout << "Ingrese el nombre de la cancion a buscar(sin comas):\n";
     std::string canción;
     getline(std::cin, canción);
-    cout << "Ingrese el número de vecinos que quiere buscar de la canción \'" << canción << "\': \n";
+    cout << "Ingrese el numero de veinos que quiere buscar de la cancion \'" << canción << "\': \n";
     int K;
     std::cin >> K;
     cout << "Calculando los " << K << " vecinos más cercanos de " << canción << "...\n";
@@ -45,7 +45,7 @@ int main() {
     if (!t.empty) {
 
         /*Datos de canción elegida*/
-        cout << "Canción:" << t.name << " ";
+        cout << "Cancion:" << t.name << " ";
         for (auto i: t.coord) cout << i << " ";
         cout << endl;
 
@@ -54,9 +54,9 @@ int main() {
         vector <Point<dim>> r = bt.KNN(t, K);
         end = std::chrono::steady_clock::now();
         time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+        time2 = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         cout << "Tiempo de KNN: " << time << "ns\n";
-        time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-        cout << "Tiempo de KNN: " << time << "ms\n";
+        cout << "Tiempo de KNN: " << time2 << "ms\n";
 
         /*Imprimir resultados KNN*/
         cout << "Presione p para imprimir los resultados\n";
@@ -72,17 +72,28 @@ int main() {
             cout << endl;
         }else cout<<"Comando incorrecto, cancelando impresión.\n";
 
-
+        /*Medir KNN_lineal*/
         start = std::chrono::steady_clock::now();
-        NaiveKNN <dim> prueba;
-        prueba.calculate(K, t, d);
+        r = bt.KNN_lineal(t,K);
         end = std::chrono::steady_clock::now();
-        time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-        cout << "tiempo de KNN naive: " << time << "ms\n";
-        prueba.printResults();
-        prueba.printDistances(t, d);
-    }
+        time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+        time2 = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        cout << "tiempo de KNN lineal: " << time << "ns\n";
+        cout << "tiempo de KNN lineal: " << time2 << "ms\n";
 
+        /*Imprimir resultados KNN lineal*/
+        cout << "Presione p para imprimir los resultados\n";
+        std::cin >> temp;
+        if(temp == 'p')
+        {
+            for (const auto& i: r) {
+                cout << i.name << ": ";
+                for (auto j: i.coord)
+                    cout << j << " ";
+                cout << endl;
+            }
+        }else cout<<"Comando incorrecto, cancelando impresión.\n";
+    }
 }
 
 /*Leer datos del archivo.*/

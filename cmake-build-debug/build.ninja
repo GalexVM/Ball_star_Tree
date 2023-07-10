@@ -51,7 +51,7 @@ build cmake_object_order_depends_target_ball_tree_clion: phony || CMakeFiles/bal
 
 build CMakeFiles/ball_tree_clion.dir/main.cpp.obj: CXX_COMPILER__ball_tree_clion_Debug F$:/Proyectos/Proyectos_C++/EDA/ball_tree_clion/main.cpp || cmake_object_order_depends_target_ball_tree_clion
   DEP_FILE = CMakeFiles\ball_tree_clion.dir\main.cpp.obj.d
-  FLAGS = -g -fdiagnostics-color=always
+  FLAGS = -O2 -g -fdiagnostics-color=always
   INCLUDES = -isystem F:/libs/eigen/eigen-3.4.0
   OBJECT_DIR = CMakeFiles\ball_tree_clion.dir
   OBJECT_FILE_DIR = CMakeFiles\ball_tree_clion.dir
@@ -65,7 +65,7 @@ build CMakeFiles/ball_tree_clion.dir/main.cpp.obj: CXX_COMPILER__ball_tree_clion
 # Link the executable ball_tree_clion.exe
 
 build ball_tree_clion.exe: CXX_EXECUTABLE_LINKER__ball_tree_clion_Debug CMakeFiles/ball_tree_clion.dir/main.cpp.obj
-  FLAGS = -g
+  FLAGS = -O2 -g
   LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\ball_tree_clion.dir
   POST_BUILD = cd .

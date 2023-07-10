@@ -48,6 +48,8 @@ public:
     vector<std::pair<Point<ndim>,double>> KNN(Point<ndim>& target, vector<std::pair<Point<ndim>,double>>  psIn,
                                            Ball_Tree_Node<ndim> *node, int k);
 
+    vector<Point<ndim>> KNN_lineal(Point<ndim>& target,int k);
+
     Point<ndim>* findTarget(std::string n);
     Ball_Tree_Node<ndim>* findClosestNode(Point<ndim>& target);
 private:
@@ -70,8 +72,54 @@ private:
     double calculateDistMaxCurrent( int k, Point<ndim>& target, vector<std::pair<Point<ndim>,double>>& psIn, double posibility);
     double calculateDistMaxCurrent( int k, Point<ndim>& target, vector<std::pair<Point<ndim>,double>>& psIn);
     double calculateDistMinNode(Point<ndim>& target, Ball_Tree_Node<ndim>* node);
+    vector<Ball_Tree_Node<ndim>*> getAllLeaves();
 
 };
+
+template<int ndim>
+vector<Ball_Tree_Node<ndim> *> Ball_Tree_Node<ndim>::getAllLeaves() {
+    vector<Ball_Tree_Node<ndim>*> r;
+    Ball_Tree_Node<ndim>* temp = nullptr;
+    if(!isLeaf){
+        temp = leftChild;
+        vector<Ball_Tree_Node<ndim>*> t = temp->getAllLeaves();
+        r.insert(r.begin(),t.begin(),t.end());
+        temp = rightChild;
+        t = temp->getAllLeaves();
+        r.insert(r.begin(),t.begin(),t.end());
+        return r;
+    }else{
+        temp = this;
+        r.push_back(temp);
+        return  r;
+    }
+}
+
+template<int ndim>
+vector<Point<ndim>> Ball_Tree_Node<ndim>::KNN_lineal(Point<ndim> &target, int k) {
+    vector<Point<ndim>> knn;
+    std::priority_queue<pair<Point<ndim>, double>, vector<pair<Point<ndim>, double>>, DistanceComparator> pq;
+    vector<Ball_Tree_Node<ndim>*> leaves = getAllLeaves();
+    for(auto ball : leaves){
+        for ( auto& point : ball->data) {
+            double distance = point.dist(&target);
+            if (pq.size() < k) {
+                pq.push({point, distance});
+            } else if (distance < pq.top().second) {
+                pq.pop();
+                pq.push({point, distance});
+            }
+        }
+
+    }
+    knn.reserve(k);
+    while (!pq.empty()) {
+        knn.push_back(pq.top().first);
+        pq.pop();
+    }
+    reverse(knn.begin(), knn.end());
+    return knn;
+}
 
 template<int ndim>
 Point<ndim>* Ball_Tree_Node<ndim>::findTarget(std::string n) {

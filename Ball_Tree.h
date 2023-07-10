@@ -23,12 +23,18 @@ public:
     void bulkData(vector<Point<ndim>> data); //Insertar datos al arbol
     void printToFile();
     vector<Point<ndim>> KNN(Point<ndim>& target,int k);
+    vector<Point<ndim>> KNN_lineal(Point<ndim>& target,int k);
 
 private:
     int numNodes = 1;
     Ball_Tree_Node<ndim>* root;
     void WriteCircles(Ball_Tree_Node<ndim>* n);
 };
+
+template<int ndim>
+vector<Point<ndim>> Ball_Tree<ndim>::KNN_lineal(Point<ndim> &target, int k) {
+    return root->KNN_lineal(target,k);
+}
 
 
 template<int ndim>
@@ -40,8 +46,11 @@ vector<Point<ndim>> Ball_Tree<ndim>::KNN(Point<ndim> &target, int k) {
     std::transform(t.begin(),t.end(),v.begin(),[](const std::pair<Point<ndim>,int> p){
         return p.first;
     });
+    reverse(v.begin(), v.end());
     return v;
 }
+
+
 
 template<int ndim>
 void Ball_Tree<ndim>::bulkData(vector<Point<ndim>> data) {
