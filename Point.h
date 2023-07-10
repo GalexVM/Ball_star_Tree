@@ -18,7 +18,7 @@ struct Point
     bool empty = false;
     Point(vector<double> v):coord(std::move(v)){}
     Point(vector<double>v, std::string n):coord(std::move(v)),name(std::move(n)){}
-    Point(bool a) { coord = std::vector<double>(ndim, 0); empty=a;}
+    Point(bool a) { coord = std::vector<double>(ndim, 0); empty=!a;}
     Point() { coord = std::vector<double>(ndim, 0);}
     Point(Point<ndim> const &p2):coord(p2.coord),name(p2.name),empty(false){}
 
@@ -30,7 +30,7 @@ template<int ndim>
 double Point<ndim>::dist(Point<ndim> *p2) {
     double sum = 0;
     for (int i = 0; i < ndim; i++) {
-        sum += pow(coord[i] - p2->coord[i], 2);
+        sum += pow(p2->coord[i] - coord[i], 2);
     }
     return sqrt(sum);
 }
@@ -39,7 +39,7 @@ template<int ndim>
 double Point<ndim>::dist(Point<ndim> p2) {
     double sum = 0;
     for (int i = 0; i < ndim; i++) {
-        sum += pow(coord[i] - p2.coord[i], 2);
+        sum += pow(p2->coord[i] - coord[i], 2);
     }
     return sqrt(sum);
 }

@@ -7,59 +7,81 @@
 #include "Point.h"
 #include <iostream>
 #include <algorithm>
+#include <queue>
+#include <sstream>
 
+using std::pair;
 
 template<int ndim>
 class NaiveKNN {
 public:
-    vector<Point<ndim>> data;
-    vector<Point<ndim>> r;
+    vector<Point<ndim>> knn;
+    vector<std::pair<Point<ndim>,double>> psOut;
     void calculate(int k, Point<ndim>& target, vector<Point<ndim>>& data);
     void printResults();
+    void printDistances(Point<ndim> &target, vector<Point<ndim>>& data);
+private:
+    struct DistanceComparator {
+        bool operator()(const pair<Point<ndim>, double>& p1, const pair<Point<ndim>, double>& p2) {
+            return p1.second < p2.second;
+        }
+    };
 
 };
 
 template<int ndim>
+void NaiveKNN<ndim>::printDistances(Point<ndim> &target, vector<Point<ndim>>& data) {
+    std::ofstream outputfile("../textfiles/distances.txt");
+    if(!outputfile.is_open()){
+        cout<<"Error al abrir el archivo.\n";
+        return;
+    }
+    std::ostringstream  oss;
+    for(auto i : data)
+    {
+        oss<< i.name <<", "<<i.coord[0]<<", "<<i.coord[1]<<", "<<i.coord[2]<<". "<<target.dist(&i)<<"\n";
+    }
+    outputfile<<oss.str();
+    outputfile.close();
+}
+
+template<int ndim>
 void NaiveKNN<ndim>::printResults() {
-    for(auto x : r)
+    for(auto x : knn)
     {
         std::cout << x.name<<" ";
-        for(auto y : x.coord){
+        /*for(auto y : x.coord){
             std::cout<<y<<" ";
-        }
+        }*/
         std::cout<<std::endl;
     }
+    /*for(auto i : psOut)
+    {
+        cout << i.first.name << ", dist: "<< i.second<<endl;
+    }*/
 }
 
 template<int ndim>
 void NaiveKNN<ndim>::calculate(int k, Point<ndim> &target, vector<Point<ndim>>& data) {
+    std::priority_queue<pair<Point<ndim>, double>, vector<pair<Point<ndim>, double>>, DistanceComparator> pq;
 
-    vector<std::pair<Point<ndim>,double>> psOut;
-    std::make_heap(psOut.begin(),psOut.end(),[](std::pair<Point<ndim>,double>& p1, std::pair<Point<ndim>,double>&p2){
-        return p1.second < p2.second;
-    });
-    for(auto a : (data))
-    {
-        double d = a.dist(&target);
-
-        psOut.push_back(std::make_pair(a,d));
-        std::push_heap(psOut.begin(), psOut.end(),[](std::pair<Point<ndim>,double>& p1, std::pair<Point<ndim>,double>& p2){
-            return p1.second < p2.second;
-        });
-
-        if(psOut.size()>k)
-        {
-            std::pop_heap(psOut.begin(), psOut.end(), [](std::pair<Point<ndim>,double>& p1, std::pair<Point<ndim>,double>& p2){
-                return p1.second < p2.second;
-            });
-            psOut.pop_back();
+    for ( auto& point : data) {
+        double distance = point.dist(&target);
+        if (pq.size() < k) {
+            pq.push({point, distance});
+        } else if (distance < pq.top().second) {
+            pq.pop();
+            pq.push({point, distance});
         }
-
     }
-    r = vector<Point<ndim>>(psOut.size());
-    std::transform(psOut.begin(),psOut.end(),r.begin(),[](const std::pair<Point<ndim>,int> p){
-        return p.first;
-    });
+
+    knn.reserve(k);
+    while (!pq.empty()) {
+        knn.push_back(pq.top().first);
+        pq.pop();
+    }
+
+    reverse(knn.begin(), knn.end());  // Si se necesita el orden ascendente de los k vecinos más cercanos
 
 }
 

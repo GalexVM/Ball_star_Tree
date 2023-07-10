@@ -20,10 +20,9 @@ public:
     ~Ball_Tree() {
         delete root;
     }
-    void bulkData(vector<Point<ndim>> data);
+    void bulkData(vector<Point<ndim>> data); //Insertar datos al arbol
     void printToFile();
     vector<Point<ndim>> KNN(Point<ndim>& target,int k);
-    Point<ndim>* findTarget(std::string name);
 
 private:
     int numNodes = 1;
@@ -31,22 +30,10 @@ private:
     void WriteCircles(Ball_Tree_Node<ndim>* n);
 };
 
-template<int ndim>
-Point<ndim>* Ball_Tree<ndim>::findTarget(std::string name) {
-    Point<ndim>* temp = root->findTarget(name);
-    if(!temp->empty)
-        return temp;
-    else
-    {
-        cout<<"Cancion no encontrada\n";
-        return nullptr;
-    }
-}
 
 template<int ndim>
 vector<Point<ndim>> Ball_Tree<ndim>::KNN(Point<ndim> &target, int k) {
     vector<std::pair<Point<ndim>,double>> psin;
-    //Ball_Tree_Node<ndim>* node = root->findClosestNode(target);
     vector<std::pair<Point<ndim>,double>> t = root->KNN(target,psin,root,k);
 
     vector<Point<ndim>> v(t.size());

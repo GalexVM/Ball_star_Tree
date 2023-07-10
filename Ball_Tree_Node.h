@@ -15,6 +15,7 @@
 #include <string>
 #include <chrono>
 #include <iomanip>
+#include <queue>
 #include "pca.h"
 #include "Point.h"
 #define INF 9999999
@@ -22,8 +23,7 @@
 using std::vector;
 using std::cout;
 using std::endl;
-
-
+using std::pair;
 
 template<int ndim>
 class Ball_Tree_Node
@@ -33,12 +33,8 @@ public:
     bool isRoot = true;
     vector<Point<ndim>> data;
     Ball_Tree_Node<ndim>* leftChild = nullptr, * rightChild = nullptr, * parent = nullptr;
-    Ball_Tree_Node(Point<ndim> c, int r) :radius(r), center(new Point<ndim>(c)) {}
     Ball_Tree_Node() {center = new Point<ndim>;}
-    ~Ball_Tree_Node() { delete center; delete leftChild; delete rightChild; }
-    double getRadius();
-    Point<ndim>* getCenter();
-    int getMaxPoints();
+    ~Ball_Tree_Node() { delete leftChild; delete rightChild; }
     bool canDivide();
     void build(vector<Point<ndim>>& data_t);
     void coverData();
@@ -55,6 +51,11 @@ public:
     Point<ndim>* findTarget(std::string n);
     Ball_Tree_Node<ndim>* findClosestNode(Point<ndim>& target);
 private:
+    struct DistanceComparator {
+        bool operator()(const pair<Point<ndim>, double>& p1, const pair<Point<ndim>, double>& p2) {
+            return p1.second < p2.second;
+        }
+    };
     Point<ndim>* center;
     double radius = 0;
     int maxPoints = 1000;
@@ -66,8 +67,10 @@ private:
                                                         Eigen::Matrix<double,Eigen::Dynamic, Eigen::Dynamic> data);
     void sort_vectors(vector<Point<ndim>>& v1, vector<Point<ndim>>& v2);
     void sort_vectors2(Eigen::Matrix<double,Eigen::Dynamic,1>& v1, vector<Point<ndim>>& v2);
+    double calculateDistMaxCurrent( int k, Point<ndim>& target, vector<std::pair<Point<ndim>,double>>& psIn, double posibility);
     double calculateDistMaxCurrent( int k, Point<ndim>& target, vector<std::pair<Point<ndim>,double>>& psIn);
     double calculateDistMinNode(Point<ndim>& target, Ball_Tree_Node<ndim>* node);
+
 };
 
 template<int ndim>
@@ -112,6 +115,14 @@ double Ball_Tree_Node<ndim>::calculateDistMinNode(Point<ndim> &target, Ball_Tree
 }
 
 template<int ndim>
+double Ball_Tree_Node<ndim>::calculateDistMaxCurrent(int k, Point<ndim> &target, vector<std::pair<Point<ndim>,double>>& psIn, double posibility) {
+    if(psIn.size() < k)
+        return INF;
+    else{
+        return posibility;
+    }
+}
+template<int ndim>
 double Ball_Tree_Node<ndim>::calculateDistMaxCurrent(int k, Point<ndim> &target, vector<std::pair<Point<ndim>,double>>& psIn) {
     if(psIn.size() < k)
         return INF;
@@ -129,8 +140,9 @@ double Ball_Tree_Node<ndim>::calculateDistMaxCurrent(int k, Point<ndim> &target,
 
 template<int ndim>
 vector<std::pair<Point<ndim>,double>> Ball_Tree_Node<ndim>::KNN(Point<ndim>& target, vector<std::pair<Point<ndim>,double>> psIn,
-                                                             Ball_Tree_Node<ndim> *node, int k) {
+                                                                Ball_Tree_Node<ndim> *node, int k) {
     vector<std::pair<Point<ndim>,double>> psOut;
+
     double distMaxCurrent = calculateDistMaxCurrent(k, target, psIn);
     double distMinNode = calculateDistMinNode(target,this);
     if( distMinNode >= distMaxCurrent)
@@ -140,48 +152,45 @@ vector<std::pair<Point<ndim>,double>> Ball_Tree_Node<ndim>::KNN(Point<ndim>& tar
     else if (node->isLeaf)
     {
         psOut = psIn;
-        std::make_heap(psOut.begin(),psOut.end(),[](std::pair<Point<ndim>,double>& p1, std::pair<Point<ndim>,double>&p2){
-            return p1.second < p2.second;
-        });
-        for(auto a : (node->data))
-        {
-            double d = a.dist(&target);
-            if(d < distMaxCurrent)
-            {
-
-                psOut.push_back(std::make_pair(a,d));
-                std::push_heap(psOut.begin(), psOut.end(),[](std::pair<Point<ndim>,double>& p1, std::pair<Point<ndim>,double>& p2){
-                    return p1.second < p2.second;
-                });
-
-                if(psOut.size()>k)
-                {
-                    std::pop_heap(psOut.begin(), psOut.end(), [](std::pair<Point<ndim>,double>& p1, std::pair<Point<ndim>,double>& p2){
-                        return p1.second < p2.second;
-                    });
-                    psOut.pop_back();
-                    distMaxCurrent = calculateDistMaxCurrent(k,target,psOut);
+        std::priority_queue<pair<Point<ndim>, double>, vector<pair<Point<ndim>, double>>, DistanceComparator> pq(psOut.begin(),psOut.end());
+        for (auto& point : node->data) {
+            double distance = point.dist(&target);
+            if (distance < distMaxCurrent) {
+                if (pq.size() < k) {
+                    pq.push({point, distance});
+                } else if (distance < pq.top().second) {
+                    pq.pop();
+                    pq.push({point, distance});
+                    distMaxCurrent = calculateDistMaxCurrent(k, target, psOut, pq.top().second);
                 }
             }
         }
+
+        vector<std::pair<Point<ndim>,double>> temp;
+        while (!pq.empty()) {
+            temp.push_back(pq.top());
+            pq.pop();
+        }
+
+        psOut = temp;
     }
-    else if(!node->isLeaf)
+    else if (!node->isLeaf)
     {
         Ball_Tree_Node<ndim>* node1, * node2;
-        if(node->leftChild->center->dist(&target) > node->rightChild->center->dist(&target)){
+        if (node->leftChild->center->dist(&target) > node->rightChild->center->dist(&target)) {
             node1 = node->rightChild;
             node2 = node->leftChild;
-        }
-        else{
+        } else {
             node1 = node->leftChild;
             node2 = node->rightChild;
         }
 
-        vector<std::pair<Point<ndim>,double>> temp = KNN(target,psIn,node1,k);
-        psOut = KNN(target,temp,node2,k);
+        vector<std::pair<Point<ndim>,double>> temp = KNN(target, psIn, node1, k);
+        psOut = KNN(target, temp, node2, k);
     }
     return psOut;
 }
+
 template<int ndim>
 void Ball_Tree_Node<ndim>::coverData3() {
     if(data.empty()) return;
@@ -243,24 +252,10 @@ void Ball_Tree_Node<ndim>::coverData2() {
 template<int ndim>
 void Ball_Tree_Node<ndim>::build(vector<Point<ndim>> & data_t) {
     saveData(data_t);
-    auto start = std::chrono::steady_clock::now();
-
     coverData2();
-
-    auto end = std::chrono::steady_clock::now();
-    auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
-    //cout<<"cover: "<<time<<"ms\n";
-
     if(canDivide())
     {
-        start = std::chrono::steady_clock::now();
-
         splitData(); //build sons
-
-        end = std::chrono::steady_clock::now();
-        time = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
-        //cout<<"split: "<<time<<"ms\n";
-
     }
     else
     {
@@ -297,46 +292,19 @@ template<int ndim>
 void Ball_Tree_Node<ndim>::splitData() {
     pca<double> pca1;
 
-    auto start = std::chrono::steady_clock::now();
-
     Eigen::Matrix<double,Eigen::Dynamic, Eigen::Dynamic> input = stdToEigen(data);
-
-    auto end = std::chrono::steady_clock::now();
-    auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
-    //cout<<"data conversion: "<<time<<"ms\n";
-
-    start = std::chrono::steady_clock::now();
 
     pca1.set_input(input);
     pca1.compute_1d();
     Eigen::Matrix<double,Eigen::Dynamic,1> data_1d = pca1.reprojection();
 
-    end = std::chrono::steady_clock::now();
-    time = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
-    //cout<<"pca: "<<time<<"ms\n";
-
-    start = std::chrono::steady_clock::now();
-
     sort_vectors2(data_1d,data);
 
-    end = std::chrono::steady_clock::now();
-    time = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
-    //cout<<"sort: "<<time<<"ms\n";
-
-
     // Hallar punto medio
-    start = std::chrono::steady_clock::now();
-
     std::size_t  const half_size = data.size() / 2;
     vector<Point<ndim>> lowerData(data.begin(), data.begin() + half_size);
     vector<Point<ndim>> higherData(data.begin() + half_size, data.end());
     data.clear(); //Liberar datos del padre
-
-    end = std::chrono::steady_clock::now();
-    time = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
-    //cout<<"divide: "<<time<<"ms\n";
-
-
 
     leftChild = new Ball_Tree_Node<ndim>;
     rightChild = new Ball_Tree_Node<ndim>;
@@ -382,18 +350,7 @@ void Ball_Tree_Node<ndim>::coverData() {
     this->radius = radius * sqrt(2);
     writeExtremePoints(mx_points,min_points,*center);
 }
-template<int ndim>
-Point<ndim> *Ball_Tree_Node<ndim>::getCenter() {
-    return center;
-}
-template<int ndim>
-double Ball_Tree_Node<ndim>::getRadius() {
-    return radius;
-}
-template<int ndim>
-int Ball_Tree_Node<ndim>::getMaxPoints() {
-    return maxPoints;
-}
+
 template<int ndim>
 bool Ball_Tree_Node<ndim>::canDivide() {
     return (currentPoints > maxPoints);
