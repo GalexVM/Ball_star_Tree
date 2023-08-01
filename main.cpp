@@ -26,24 +26,24 @@ int main() {
 
     /*Input de KNN*/
     cout << "Ingrese el nombre de la cancion a buscar(sin comas):\n";
-    std::string canción;
-    getline(std::cin, canción);
-    cout << "Ingrese el numero de veinos que quiere buscar de la cancion \'" << canción << "\': \n";
+    std::string cancion;
+    getline(std::cin, cancion);
+    cout << "Ingrese el numero de veinos que quiere buscar de la cancion \'" << cancion << "\': \n";
     int K;
     std::cin >> K;
-    cout << "Calculando los " << K << " vecinos mas cercanos de " << canción << "...\n";
+    cout << "Calculando los " << K << " vecinos mas cercanos de " << cancion << "...\n";
 
-    /*Buscar canción dentro de los datos*/
+    /*Buscar cancion dentro de los datos*/
     Point <dim> t = Point<dim>(false);
-    for (auto i: d) {
-        if (i.name == canción)
+    for (const auto& i: d) {
+        if (i.name == cancion)
             t = Point<dim>(i);
     }
 
     /*Canción encontrada:*/
     if (!t.empty) {
 
-        /*Datos de canción elegida*/
+        /*Datos de cancion elegida*/
         cout << "Cancion:" << t.name << " ";
         for (auto i: t.coord) cout << i << " ";
         cout << endl;
